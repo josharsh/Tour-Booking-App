@@ -24,6 +24,9 @@ const app = express();
 
 const userRouter = require('./routes/userRoutes');
 const tourRouter = require('./routes/tourRoutes');
+
+const AppError = require('./utils/appErrors');
+const globalHandler = require('./controllers/errorController');
 //this express.json() is the middleware
 ///middleware is just a function that can modify the incoming request data
 // called middleware because it stands between the req and res
@@ -84,4 +87,15 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
+// For unhandles routes
+// We are defining it here at this point of code, because if this point is reached, it means that
+// the request-response cycle is not finished, and that the route has not matched any of the above two
+app.all('*', (req, res, next) => {
+  // For express, next with an arguments means that some error has ocuured, it then skips all the middlewares in the stack,
+  //and passes the object straight to global error handler middleware
+  next(new AppError(`can't find ${req.originalUrl} on this server`, 404));
+});
+
+// Express understands that for a middleware with 4 arguments, it is a global error handler middleware
+app.use(globalHandler);
 module.exports = app;
